@@ -1,0 +1,110 @@
+<html>
+
+<head>
+
+    <script>
+
+        const calcWorker = new Worker('worker.js');
+        calcWorker.onmessage = (event) => {
+            console.log(event);
+            updateResponse("received Message from worker"+JSON.stringify(event.data));
+        }
+
+        const storeWorker = new Worker('DataStore.js');
+
+        storeWorker.onmessage = (event) => {
+            console.table(event.data);
+            updateResponse(event.data.map((item)=>(`<div>${item.todoItem}</div>`)))
+        }
+
+
+    </script>
+
+
+</head>
+
+<body style="padding: 0px; margin:0px; scroll-behavior: smooth; scrollbar-width: thin;">
+    <div style="text-align: center;font-size: 2rem;width: 98vw;">
+        Web Worker Demo <div id="clock">show time</div>
+    </div>
+    <div style="background-color: green; color: gainsboro; position: sticky; top: 0;">
+        <ul>
+            <li>Home</li>
+            <li>Blog</li>
+            <li>Projects</li>
+            <li>GitHub</li>
+        </ul>
+    </div>
+    <div style="height: 100vh; width:100vw;">
+        <h4>Normal Function</h4>
+        <input type="text" name="start" id="start" value="0" readonly><br />
+        <input type="text" name="last" id="last" value="500000000" ><br />
+        <button id="addUpBtn">Calculate Total</button>
+        <button id="addUpUsingWorkerBtn">Calculate Total without Blocking the UI</button>
+        <p>&nbsp;</p>
+        <div id="output" style="overflow: auto; border-style: solid; border-color: red; border-radius: 5px; width: 200px; height: 200px; " >Response will appear here..
+        </div>
+
+        <p>&nbsp;</p>
+        <div>
+            <input type="text" name="todoItem" id="todoItem" value="Enter Something...."><br />
+            <button id="addTodoItem">Add TODO Item to List</button>
+        </div>
+
+    </div>
+
+</body>
+<script>
+
+    const updateResponse = (text)=> {
+        const output = document.getElementById("output");
+        output.innerHTML = text;
+    }
+
+    const addUpNumbers = () => {
+        const start = parseInt(document.getElementById("start").value);
+        const last = parseInt(document.getElementById("last").value);
+        console.log("clicked", start, last);
+        let total = 0;
+        for (i = start; i <= last; i++) {
+            total = total + i;
+        }
+        console.log(total);
+        updateResponse(total);
+    }
+
+    const sendMessageToWorker = () => {
+        const start = parseInt(document.getElementById("start").value);
+        const last = parseInt(document.getElementById("last").value);
+        calcWorker.postMessage({ start, last });
+    }
+
+    const handleAddTodoItem = ()=>{
+        const todoItem = document.getElementById("todoItem").value;
+        storeWorker.postMessage({todoItem});
+    }
+
+    const addUpBtn = document.getElementById("addUpBtn");
+    addUpBtn.addEventListener("click", addUpNumbers);
+
+    const addUpUsingWorkerBtn = document.getElementById("addUpUsingWorkerBtn");
+    addUpUsingWorkerBtn.addEventListener("click", sendMessageToWorker);
+
+    const addTodoItem = document.getElementById("addTodoItem");
+    addTodoItem.addEventListener("click", handleAddTodoItem);
+
+    const updateClock = () => {
+        const clock = document.getElementById("clock");
+        // const d = new Date();
+        // let text = d.toLocaleString();
+        //clock.innerHTML = text;
+        clock.innerHTML = Date().toLocaleString();
+    }
+
+    setInterval(()=>{
+        updateClock();
+    },1000);
+
+</script>
+
+</html>
